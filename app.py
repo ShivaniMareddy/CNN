@@ -365,6 +365,5 @@ Crack • Manhole • Pothole
 AI-powered infrastructure monitoring
 </div>
 </div>
-
 </div>
 """,unsafe_allow_html=True)
