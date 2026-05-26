@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import json
 
-# ---------------- PAGE ----------------
+# ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
     page_title="Road Damage Detection",
@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- CSS ----------------
+# ---------------- LOAD CSS ----------------
 
 with open("style.css") as f:
     st.markdown(
@@ -20,7 +20,7 @@ with open("style.css") as f:
         unsafe_allow_html=True
     )
 
-# ---------------- MODEL ----------------
+# ---------------- LOAD MODEL ----------------
 
 @st.cache_resource
 def load_model():
@@ -31,17 +31,21 @@ def load_model():
 
 model = load_model()
 
-with open("labelmap.json","r") as f:
-    label_map = json.load(f)
+# ---------------- LABEL MAP ----------------
 
-class_names = list(label_map.values())
+with open("labelmap.json","r") as f:
+    label_map=json.load(f)
+
+class_names=list(label_map.values())
+
 
 # ---------------- HERO ----------------
 
 st.markdown("""
+
 <div class="hero">
 
-<div style="font-size:52px">
+<div style="font-size:52px;">
 🚧
 </div>
 
@@ -54,13 +58,16 @@ Smart City Infrastructure Monitoring using CNN
 </div>
 
 <div class="hero-badges">
+
 <span class="badge">CNN</span>
 <span class="badge">TensorFlow</span>
 <span class="badge">Computer Vision</span>
 <span class="badge">Smart Infrastructure</span>
+
 </div>
 
 </div>
+
 """,unsafe_allow_html=True)
 
 
@@ -121,6 +128,7 @@ ROAD IMAGE INPUT
 
 """,unsafe_allow_html=True)
 
+
 uploaded = st.file_uploader(
     "Choose image",
     type=["jpg","jpeg","png"]
@@ -128,9 +136,12 @@ uploaded = st.file_uploader(
 
 if uploaded:
 
-    image = Image.open(uploaded)
+    image=Image.open(uploaded)
 
-    col1,col2 = st.columns([1,1])
+    col1,col2=st.columns([1,1])
+
+
+# ---------------- IMAGE PREVIEW ----------------
 
     with col1:
 
@@ -142,28 +153,41 @@ if uploaded:
 IMAGE PREVIEW
 </div>
 
-<h2>🖼 Uploaded Image</h2>
+<h2>
+🖼 Uploaded Image
+</h2>
 
 </div>
 
 """,unsafe_allow_html=True)
 
+        # FIXED HERE
         st.image(
             image,
-            use_container_width=True
+            width=450
         )
 
-    # -------- preprocess --------
+
+# ---------------- PREPROCESS ----------------
 
     img=image.resize((224,224))
 
-    img=np.array(img).astype("float32")
+    img=np.array(img)
 
     if len(img.shape)==2:
-        img=np.stack((img,)*3,axis=-1)
+
+        img=np.stack(
+            (img,)*3,
+            axis=-1
+        )
 
     if img.shape[-1]==4:
+
         img=img[:,:,:3]
+
+    img=img.astype(
+        "float32"
+    )
 
     img=img/255.0
 
@@ -171,6 +195,9 @@ IMAGE PREVIEW
         img,
         axis=0
     )
+
+
+# ---------------- PREDICT ----------------
 
     prediction=model.predict(
         img,
@@ -181,13 +208,16 @@ IMAGE PREVIEW
         prediction
     )[0]
 
-    pred=np.argmax(prediction)
+    pred=np.argmax(
+        prediction
+    )
 
     confidence=float(
         np.max(prediction)*100
     )
 
-    # -------- severity --------
+
+# ---------------- SEVERITY ----------------
 
     if confidence>85:
 
@@ -200,6 +230,9 @@ IMAGE PREVIEW
     else:
 
         severity="Low 🟢"
+
+
+# ---------------- RESULT ----------------
 
     with col2:
 
@@ -219,57 +252,89 @@ CNN Classification Output
 
 """,unsafe_allow_html=True)
 
+
         st.markdown(
+
 f"""
+
 <div class='metric-row'>
 
+
 <div class='metric-tile'>
+
 <span class='mt-val'>
 {class_names[pred]}
 </span>
+
 <span class='mt-lbl'>
 Prediction
 </span>
+
 </div>
 
+
 <div class='metric-tile'>
+
 <span class='mt-val'>
 {confidence:.1f}%
 </span>
+
 <span class='mt-lbl'>
 Confidence
 </span>
+
 </div>
 
+
 <div class='metric-tile'>
+
 <span class='mt-val'>
 {severity}
 </span>
+
 <span class='mt-lbl'>
 Severity
 </span>
+
 </div>
 
 </div>
+
 """,
+
 unsafe_allow_html=True
 )
 
+
+# ---------------- PROBABILITY ----------------
+
         st.markdown(
 """
-<h3 style='margin-top:30px'>
+<h3 style='margin-top:25px'>
 Probability Distribution
 </h3>
 """,
 unsafe_allow_html=True
 )
 
-        for i in range(min(len(class_names),len(prediction))):
 
-            width=float(prediction[i]*100)
+        for i in range(
+
+        min(
+        len(class_names),
+        len(prediction)
+        )):
+
+
+            width=float(
+                prediction[i]*100
+            )
+
 
             st.markdown(
+
 f"""
+
 <div class="bar-row">
 
 <div class="bar-name">
@@ -277,9 +342,11 @@ f"""
 </div>
 
 <div class="bar-track">
+
 <div class="bar-fill"
 style="width:{width:.1f}%;">
 </div>
+
 </div>
 
 <div class="bar-pct">
@@ -287,13 +354,17 @@ style="width:{width:.1f}%;">
 </div>
 
 </div>
+
 """,
+
 unsafe_allow_html=True
 )
 
-# ---------------- RECOMMENDATIONS ----------------
+
+# ---------------- RECOMMENDATION ----------------
 
     st.markdown("""
+
 <div class='panel'>
 
 <div class='panel-label'>
@@ -301,30 +372,40 @@ RECOMMENDATIONS
 </div>
 
 </div>
+
 """,unsafe_allow_html=True)
+
 
     if class_names[pred]=="pothole":
 
         st.error("""
+
 Immediate maintenance recommended.
 
 High-risk road condition detected.
+
 """)
+
 
     elif class_names[pred]=="crack":
 
         st.warning("""
+
 Repair advised soon.
 
 Damage may spread further.
+
 """)
+
 
     else:
 
         st.success("""
+
 Road condition stable.
 
 Periodic monitoring recommended.
+
 """)
 
 
@@ -334,7 +415,9 @@ st.markdown("""
 
 <div class='info-grid'>
 
+
 <div class='info-tile'>
+
 <div class='info-title'>
 🧠 Model
 </div>
@@ -342,10 +425,12 @@ st.markdown("""
 <div class='info-body'>
 CNN trained using TensorFlow
 </div>
+
 </div>
 
 
 <div class='info-tile'>
+
 <div class='info-title'>
 📊 Classes
 </div>
@@ -353,10 +438,12 @@ CNN trained using TensorFlow
 <div class='info-body'>
 Crack • Manhole • Pothole
 </div>
+
 </div>
 
 
 <div class='info-tile'>
+
 <div class='info-title'>
 🏙 Smart Cities
 </div>
@@ -364,6 +451,10 @@ Crack • Manhole • Pothole
 <div class='info-body'>
 AI-powered infrastructure monitoring
 </div>
+
 </div>
+
+
 </div>
+
 """,unsafe_allow_html=True)
